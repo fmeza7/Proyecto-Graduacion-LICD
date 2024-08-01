@@ -4,7 +4,7 @@ import numpy as np
 import random
 import networkx as nx
 from collections import defaultdict
-import itertools
+from itertools import permutations
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -134,9 +134,9 @@ def generate_non_isomorphic_graphs(num_nodes: int, allow_cycles: bool) -> list:
 
     non_isomorphic_graphs = []
     for g in graphs:
-        # if all(not nx.is_isomorphic(g, existing_g) for existing_g in non_isomorphic_graphs):
-        #     non_isomorphic_graphs.append(g)
-        non_isomorphic_graphs.append(g)
+        if all(not nx.is_isomorphic(g, existing_g) for existing_g in non_isomorphic_graphs):
+            non_isomorphic_graphs.append(g)
+        # non_isomorphic_graphs.append(g)
     print(len(non_isomorphic_graphs))
     # Print the number of edges in each graph and which type of graph it is
     # for g in non_isomorphic_graphs:
@@ -225,103 +225,27 @@ def generate_unique_random_graphs_with_triangles(num_nodes, edge_probability=0.3
     return adj_matrices, edge_labels
 
 
-def generate_isomorphic_graphs(num_nodes: int, allow_cycles: bool) -> tuple:
-    """
-    Generate isomorphic graphs with a specified number of nodes.
+def generate_isomorphic_graphs(adj_matrix):
+    n = len(adj_matrix)
+    vertices = list(range(n))
 
-    Parameters:
-    num_nodes (int): Number of nodes in the graph.
-    allow_cycles (bool): Whether to allow cycles in the generated graphs.
+    # Generate all possible permutations of vertex labelings
+    all_permutations = permutations(vertices)
 
-    Return:
-    tuple: List of generated isomorphic graphs, and the node participation dictionary.
-    """
-    def generate_random_tree(n: int) -> nx.Graph:
-        """
-        Generate a random tree with a specified number of nodes.
+    isomorphic_matrices = set()
 
-        Parameters:
-        n (int): Number of nodes in the tree.
+    for perm in all_permutations:
+        # Create a new matrix based on the permutation
+        new_matrix = np.zeros((n, n), dtype=int)
+        for i in range(n):
+            for j in range(n):
+                new_matrix[perm[i]][perm[j]] = adj_matrix[i][j]
 
-        Return:
-        nx.Graph: Generated tree.
-        """
-        return nx.random_tree(n)
+        # Convert the matrix to a tuple for hashing (set membership)
+        matrix_tuple = tuple(map(tuple, new_matrix))
+        isomorphic_matrices.add(matrix_tuple)
 
-    def generate_random_graph_with_one_triangle(n: int, node_participation: dict) -> nx.Graph:
-        """
-        Generate a random graph with a specified number of nodes and one triangle.
-
-        Parameters:
-        n (int): Number of nodes in the graph.
-        node_participation (dict): Dictionary to keep track of the nodes that participate in triangles.
-
-        Return:
-        nx.Graph: Generated graph.
-        """
-        graph = generate_random_tree(n)
-        nodes_with_degree_2 = [node for node in graph.nodes() if graph.degree(node) >= 2]
-        node = random.choice(nodes_with_degree_2)
-        neighbors = list(graph.neighbors(node))
-        a, b = random.sample(neighbors, 2)
-        graph.add_edge(a, b)
-
-        triangle_nodes = [node, a, b]
-        for node in triangle_nodes:
-            node_participation[node] += 1
-
-        return graph
-
-    def generate_all_isomorphisms(graph: nx.Graph, node_participation: dict) -> list:
-        """
-        Generate all isomorphic versions of a given graph.
-
-        Parameters:
-        graph (nx.Graph): The input graph.
-        node_participation (dict): Dictionary tracking node participation in triangles.
-
-        Return:
-        list: List of tuples, each containing an isomorphic graph and its node participation dict.
-        """
-        num_nodes = graph.number_of_nodes()
-        all_permutations = list(itertools.permutations(range(num_nodes)))
-        isomorphic_graphs = []
-
-        # Get node labels
-        labels = nx.get_node_attributes(graph, 'label')
-
-        for perm in all_permutations:
-            new_graph = nx.Graph()
-            for edge in graph.edges():
-                new_edge = (perm[edge[0]], perm[edge[1]])
-                new_graph.add_edge(*new_edge)
-            
-            # Apply the permutation to node attributes
-            new_node_participation = {perm[node]: count for node, count in node_participation.items()}
-            new_labels = {perm[node]: labels[node] for node in labels}
-            nx.set_node_attributes(new_graph, new_labels, 'label')
-            
-            isomorphic_graphs.append((new_graph, new_node_participation))
-
-        return isomorphic_graphs
-
-    # Initialize node participation and labels
-    node_participation = defaultdict(int)
-
-    if allow_cycles:
-        base_graph = generate_random_graph_with_one_triangle(num_nodes, node_participation)
-    else:
-        base_graph = generate_random_tree(num_nodes)
-
-    # Assign labels to nodes in the base graph
-    labels = {i: f'Node_{i}' for i in base_graph.nodes()}
-    nx.set_node_attributes(base_graph, labels, 'label')
-
-    isomorphic_graphs = generate_all_isomorphisms(base_graph, node_participation)
-
-    # Extract just the graphs from the list of tuples
-    graphs = [graph for graph, _ in isomorphic_graphs]
-
-    return graphs, dict(node_participation)
+    # Convert back to list of numpy arrays
+    return [np.array(matrix) for matrix in isomorphic_matrices]
 
 # -------------------
