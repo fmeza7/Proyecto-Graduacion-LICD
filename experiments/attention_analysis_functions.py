@@ -24,12 +24,13 @@ import hashlib
 
 # ATTENTION ANALYSIS FUNCTIONS
 # -------------------
-def visualize_single_edge_attention(attention_weights, layer_index, num_nodes, source_edge):
+def visualize_single_edge_attention(attention_weights, layer_index, num_nodes, source_edge, index=0):
     # Extract attention weights for the specified layer
     layer_weights = attention_weights[layer_index]
 
     # Average over the batch dimension
-    avg_attn_map = layer_weights.mean(dim=0).cpu().detach().numpy()
+    #avg_attn_map = layer_weights.mean(dim=0).cpu().detach().numpy()
+    avg_attn_map = layer_weights[index, :, :].cpu().detach().numpy()
 
     # Calculate the index of the source edge
     source_i, source_j = source_edge
@@ -54,12 +55,13 @@ def visualize_single_edge_attention(attention_weights, layer_index, num_nodes, s
     plt.tight_layout()
     plt.show()
 
-def visualize_edge_attention(attention_weights, layer_index, num_nodes, figsize=(10, 10)):
+def visualize_edge_attention(attention_weights, layer_index, num_nodes, index=0, figsize=(10, 10)):
     # Extract attention weights for the specified layer
     layer_weights = attention_weights[layer_index]
 
     # Average over the batch dimension
-    avg_attn_map = layer_weights.mean(dim=0).cpu().detach().numpy()
+    #avg_attn_map = layer_weights.mean(dim=0).cpu().detach().numpy()
+    avg_attn_map = layer_weights[index, :, :].cpu().detach().numpy()
 
     # Create edge labels
     edge_labels = [f"{i}->{j}" for i in range(num_nodes) for j in range(num_nodes)]
