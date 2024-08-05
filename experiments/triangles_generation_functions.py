@@ -7,6 +7,7 @@ from collections import defaultdict
 from itertools import permutations
 from collections import defaultdict
 import hashlib
+import torch
 
 import matplotlib.pyplot as plt
 
