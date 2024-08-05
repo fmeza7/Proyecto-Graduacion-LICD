@@ -2,6 +2,7 @@
 import numpy as np
 import random
 import networkx as nx
+import torch
 
 import matplotlib.pyplot as plt
 
@@ -183,4 +184,19 @@ def get_unique_adj_matrices(adj_matrices):
 def moving_average(data, window_size):
     return np.convolve(data, np.ones(window_size), 'valid') / window_size
 
+def find_triangles(adj_matrices):
+  edge_labels = []
+  num_nodes = adj_matrices[0].shape[0]
+  for adj in adj_matrices:
+    triangle_edges = np.zeros((num_nodes, num_nodes))
+    for i in range(num_nodes):
+        for j in range(i+1, num_nodes):
+            if adj[i, j] == 1:
+                for k in range(j+1, num_nodes):
+                    if adj[i, k] == 1 and adj[j, k] == 1:
+                        triangle_edges[i, j] = triangle_edges[j, i] = 1
+                        triangle_edges[i, k] = triangle_edges[k, i] = 1
+                        triangle_edges[j, k] = triangle_edges[k, j] = 1
+    edge_labels.append(torch.tensor(triangle_edges, dtype=torch.float32))
+  return edge_labels
 # -------------------
